@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Segoe UI,sans-serif;
+        }
+
+        body{
+            background: #0f1117;
+            color: white;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center ;
+        }
+
+
+        .container{
+            width: 95vw;
+            height: 95vh;
+            display: flex;
+            gap: 20px;
+        }
+        .left{
+            flex:1;
+            background:#181c25;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #2a2f3b;
+        }
+        .right{
+            width: 400px;
+            min-width: 350px;
+            background:#181c25;
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border: 1px solid #2a2f3b;
+        }
+
+        h1{
+        font-size:28px;
+        }
+        input{
+            width: 100%;
+            padding: 14px;
+            border: none;
+            outline: none;
+            border-radius:12px;
+            background:#252b36;
+            color:white;
+            font-size:16px;
+}
+        button{
+            padding:14px;
+            border:none;
+            border-radius:12px;
+            cursor:pointer;
+            background:#4caf50;
+            color:white;
+            font-weight:600;
+            flex: none;
+                 }
+        button:hover{
+            opacity: .9;
+        }
+        video{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+
+        }
+
+
+        canvas{
+            display: none;
+        }
+        #result{
+            flex:1;
+            overflow:auto;
+                background:#252b36;
+                padding:15px;
+                border-radius:12px;
+                line-height:1.6;
+                white-space:pre-wrap;
+        }
+
+
+
+         .status{
+            color:#8a8f99;
+         }
+
+
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="left">
+        <video id="camera" autoplay playsinline></video>
+    </div>
+
+    <div class="right">
+        <h1>VisionLense</h1>
+
+        <div class="status">
+            Enter your Groq API key (go get one its free)
+        </div>
+
+        <input id="apiKey" type="password" placeholder="Groq api key">
+
+        <button onclick="saveKey()">Save API Key</button>
+        <button onclick="startCamera()">Start Camera</button>
+        <button onclick="analyzeImage()">Analyze Scene</button>
+
+        <div id="result">ready</div>
+    </div>
+</div>
+<canvas id="canvas"></canvas>
+<script>
+let stream;
+
+// ================= SAVE API KEY =================
+async function saveKey() {
+    try {
+        const key = document.getElementById("apiKey").value;
+
+        if (!key) {
+            document.getElementById("result").innerText = "Please enter API key";
+            return;
+        }
+
+        const result = await pywebview.api.set_api_key(key);
+
+        if (result.success) {
+            document.getElementById("result").innerText = "API key saved ✔";
+        } else {
+            document.getElementById("result").innerText = "Failed to save API key";
+        }
+    } catch (err) {
+        document.getElementById("result").innerText = err.message;
+    }
+}
+
+// ================= START CAMERA =================
+async function startCamera() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+        const video = document.getElementById("camera");
+        video.srcObject = stream;
+
+        await video.play();
+
+        document.getElementById("result").innerText = "Camera started ✔";
+    } catch (err) {
+        document.getElementById("result").innerText = "Camera error: " + err.message;
+    }
+}
+
+// ================= ANALYZE IMAGE =================
+async function analyzeImage() {
+    try {
+        const video = document.getElementById("camera");
+
+        // Wait for camera readiness
+        if (!video.videoWidth || !video.videoHeight) {
+            document.getElementById("result").innerText =
+                "Camera not ready. Wait 2 seconds and try again.";
+            return;
+        }
+
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = canvas.toDataURL("image/jpeg");
+
+        document.getElementById("result").innerText =
+            "Analyzing image... 🤖";
+
+        const response = await pywebview.api.analyze_image(imageData);
+
+        if (response.success) {
+            const res = response.result;
+
+            document.getElementById("result").innerText =
+                res?.content ||
+                res?.message?.content ||
+                JSON.stringify(res, null, 2);
+        } else {
+            document.getElementById("result").innerText =
+                response.error || "Unknown error";
+        }
+
+    } catch (err) {
+        document.getElementById("result").innerText = "Error: " + err.message;
+    }
+}
+</script>
+</body>
+</html>
