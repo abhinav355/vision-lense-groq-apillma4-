@@ -26,7 +26,7 @@ class VisionLense:
                         "content": [
                             {
                                 "type": "text",
-                                "text": "describe everything in this image in detail"
+                                "text": "describe everything in this image in detail if a persone shows a product with their tounge out say product mode and describe the product only"
                             },
                             {
                                 "type": "image_url",
