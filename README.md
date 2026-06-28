@@ -155,3 +155,9 @@ I built VisionLense to learn how AI vision models work and how Python can commun
 ---
 
 Made with ❤️ using Python, Groq, HTML, CSS, and JavaScript.
+
+---
+
+##New upd
+
+ok so i just changed the promt of groq in index.py basicly now it will search for products and find data about it i guess its cool
